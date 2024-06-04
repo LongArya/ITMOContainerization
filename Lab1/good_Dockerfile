@@ -1,0 +1,12 @@
+FROM jupyterhub/jupyterhub:3.1.1
+
+WORKDIR /jupyter
+
+RUN apt update && \
+    apt -y install python3-dev \
+    git \ 
+    vim \
+    nano
+
+COPY . /jupyter
+ENTRYPOINT jupyterhub --log-level=DEBUG

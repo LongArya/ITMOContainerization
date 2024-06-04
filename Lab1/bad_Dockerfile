@@ -1,0 +1,13 @@
+FROM python:3.8 
+
+WORKDIR /jupyter
+
+COPY . /jupyter
+
+RUN apt update && apt -y install nodejs npm
+RUN npm install -g configurable-http-proxy
+RUN python3 -m pip install jupyterhub
+RUN python3 -m pip install jupyterlab notebook  
+
+
+ENTRYPOINT jupyterhub --log-level=DEBUG
