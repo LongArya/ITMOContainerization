@@ -1,0 +1,55 @@
+services:
+  database: 
+    container_name: "database"
+    image: postgres:alpine3.20
+    volumes:
+      - db_storage:/var/lib/postgresql/data
+    env_file:
+      - .env 
+    networks:
+      - jupyter_hub_network
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+
+  database_init:
+    container_name: "database_init"
+    image: postgres:alpine3.20
+    volumes:
+      - db_storage:/var/lib/postgresql/data
+      - ./init_db.sh:/root/init_db.sh
+    env_file:
+        - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    command: chmod +x /root/init_db.sh && /root/init_db.sh
+      
+  jupyter_hub: 
+    image: "hub_image"
+    container_name: "jupyter_hub"
+    build:
+      context: .
+      dockerfile: good_Dockerfile 
+    depends_on:
+      database:
+        condition: service_healthy
+      database_init:
+        condition: service_completed_successfully
+    volumes:
+      - ./jupyterhub_config.py:/jupyter/jupyterhub_config.py
+    ports:
+      - 8000:8000
+    command: jupyterhub --log-level=DEBUG -f /jupyter/jupyterhub_config.py
+    env_file:
+      - .env
+    networks:
+      - jupyter_hub_network
+
+volumes:
+  db_storage:
+    name: "db_storage"
+
+networks:
+  jupyter_hub_network:
+    name: "jupyter_hub_network"
+     
