@@ -10,9 +10,10 @@
 
 <details>
 
-![example]("./report_figures/missing_configmap.png")
+![example]("report_figures/missing_configmap.png")
 
 </details> 
+
 
 
 ### 
