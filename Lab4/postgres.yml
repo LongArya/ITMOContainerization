@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-service
+spec:
+  ports:
+      - port: 5432
+  selector:
+    app: postgres
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jupyterhub-db-secrets
+type: Opaque
+stringData:
+  POSTGRES_USER: ps_username
+  POSTGRES_PASSWORD: ps_password
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyterhub-db-configmap
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: "jupyterhub_database"
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres-container
+          image: postgres:14
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: postgres-pvc
+              mountPath: /var/lib/postgresql/data
+          envFrom:
+            - secretRef:
+                name: jupyterhub-db-secrets
+            - configMapRef: 
+                name: jupyterhub-db-configmap
+      volumes:
+        - name: postgres-pvc
+          persistentVolumeClaim:
+            claimName: postgres-pvc
